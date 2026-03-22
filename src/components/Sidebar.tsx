@@ -48,7 +48,7 @@ export default function Sidebar() {
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`}
             >
-              <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+              <Icon className="w-[18px] h-[18px]" />
               {label}
             </Link>
           );
