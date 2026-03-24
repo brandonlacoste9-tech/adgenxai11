@@ -4,9 +4,10 @@
    Collapsible, responsive, warm leather aesthetic.
    ═══════════════════════════════════════════════════════ */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { clearDemoSession, hasDemoSession } from "@/lib/session";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -26,6 +27,7 @@ import {
   Container,
   Binary,
   Zap,
+  Globe,
 } from "lucide-react";
 
 const navGroups = [
@@ -34,6 +36,7 @@ const navGroups = [
     items: [
       { href: "/chat", icon: MessageSquare, label: "Chat Studio" },
       { href: "/code", icon: Code2, label: "Code Builder" },
+      { href: "/sites", icon: Globe, label: "Sites" },
       { href: "/knowledge", icon: BookOpen, label: "Knowledge Base" },
       { href: "/images", icon: ImageIcon, label: "Image Gen" },
     ],
@@ -57,9 +60,31 @@ const navGroups = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    if (!hasDemoSession()) {
+      setLocation("/login");
+      return;
+    }
+    setSessionReady(true);
+  }, [setLocation]);
+
+  const handleLogout = () => {
+    clearDemoSession();
+    setLocation("/login");
+  };
+
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl bg-primary/15 animate-pulse" aria-hidden />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -183,12 +208,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <p className="text-xs text-muted-foreground truncate">50 credits</p>
               </div>
             )}
-            {!collapsed && (
-              <Link href="/login">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                  <LogOut className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={handleLogout}
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-heading text-xs">
+                  Sign out
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={handleLogout}
+                aria-label="Sign out"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </Button>
             )}
           </div>
         </div>

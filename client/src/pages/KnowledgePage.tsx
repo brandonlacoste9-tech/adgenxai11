@@ -1,175 +1,286 @@
 /* ═══════════════════════════════════════════════════════
-   Knowledge Base — AdGenXAI Amber Atelier
-   Upload docs, manage knowledge bases, chat with RAG.
+   Knowledge — collections, .txt/.md ingest, OpenAI embeddings, semantic search
    ═══════════════════════════════════════════════════════ */
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  BookOpen,
-  Upload,
-  FileText,
-  Plus,
-  Search,
-  Trash2,
-  MessageSquare,
-  FolderOpen,
-  File,
-  Database,
-} from "lucide-react";
+import { BookOpen, Plus, Search, FolderOpen, Database, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import type { KnowledgeCollectionDto, KnowledgeQueryHitDto } from "@shared/studio-api";
+import {
+  createKnowledgeCollection,
+  deleteKnowledgeCollection,
+  fetchKnowledgeCollections,
+  queryKnowledge,
+  uploadKnowledgeDocument,
+} from "@/lib/studio-client";
 
-interface KnowledgeBase {
-  id: string;
-  name: string;
-  documents: number;
-  chunks: number;
-  size: string;
-  lastUpdated: string;
-  status: "ready" | "processing" | "error";
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunk = 0x8000;
+  const parts: string[] = [];
+  for (let i = 0; i < bytes.length; i += chunk) {
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + chunk) as unknown as number[]));
+  }
+  return btoa(parts.join(""));
 }
 
-const SAMPLE_KBS: KnowledgeBase[] = [
-  { id: "1", name: "React Documentation", documents: 42, chunks: 1280, size: "15.2 MB", lastUpdated: "2 hours ago", status: "ready" },
-  { id: "2", name: "Company Policies", documents: 8, chunks: 340, size: "4.1 MB", lastUpdated: "1 day ago", status: "ready" },
-  { id: "3", name: "API Reference", documents: 15, chunks: 890, size: "8.7 MB", lastUpdated: "3 hours ago", status: "processing" },
-];
-
 export default function KnowledgePage() {
-  const [knowledgeBases, setKnowledgeBases] = useState(SAMPLE_KBS);
-  const [search, setSearch] = useState("");
+  const [collections, setCollections] = useState<KnowledgeCollectionDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [query, setQuery] = useState("");
+  const [hits, setHits] = useState<KnowledgeQueryHitDto[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
-  const filtered = knowledgeBases.filter((kb) =>
-    kb.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const refresh = useCallback(async () => {
+    try {
+      const list = await fetchKnowledgeCollections();
+      setCollections(list);
+      setSelectedId((prev) => {
+        if (prev && list.some((c) => c.id === prev)) return prev;
+        return list[0]?.id ?? "";
+      });
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleCreate = () => {
-    const newKb: KnowledgeBase = {
-      id: String(Date.now()),
-      name: "New Knowledge Base",
-      documents: 0,
-      chunks: 0,
-      size: "0 MB",
-      lastUpdated: "just now",
-      status: "ready",
-    };
-    setKnowledgeBases((prev) => [newKb, ...prev]);
-    toast.success("Knowledge base created! Upload documents to get started.");
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const handleCreate = async () => {
+    try {
+      const col = await createKnowledgeCollection(newName.trim() || "My knowledge base");
+      setNewName("");
+      toast.success(`Created “${col.name}”`);
+      await refresh();
+      setSelectedId(col.id);
+    } catch (e) {
+      toast.error(String(e));
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setKnowledgeBases((prev) => prev.filter((kb) => kb.id !== id));
-    toast.success("Knowledge base deleted");
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteKnowledgeCollection(id);
+      toast.success("Collection deleted");
+      if (selectedId === id) setSelectedId("");
+      await refresh();
+    } catch (e) {
+      toast.error(String(e));
+    }
   };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !selectedId) {
+      if (!selectedId) toast.error("Select a collection first");
+      return;
+    }
+    const lower = file.name.toLowerCase();
+    const isPdf = lower.endsWith(".pdf");
+    const isText = lower.endsWith(".txt") || lower.endsWith(".md");
+    if (!isPdf && !isText) {
+      toast.error("Use .txt, .md, or .pdf");
+      return;
+    }
+    try {
+      let chunkCount: number;
+      if (isPdf) {
+        const buf = await file.arrayBuffer();
+        if (buf.byteLength > 18 * 1024 * 1024) {
+          toast.error("PDF is too large for this upload path (~18MB). Split or export text.");
+          return;
+        }
+        const b64 = arrayBufferToBase64(buf);
+        const out = await uploadKnowledgeDocument(selectedId, file.name, { base64Content: b64 });
+        chunkCount = out.chunkCount;
+      } else {
+        const text = await file.text();
+        const out = await uploadKnowledgeDocument(selectedId, file.name, { textContent: text });
+        chunkCount = out.chunkCount;
+      }
+      toast.success(`Indexed ${chunkCount} chunk(s) from ${file.name}`);
+      await refresh();
+    } catch (err) {
+      toast.error(String(err));
+    }
+  };
+
+  const runQuery = async () => {
+    if (!selectedId || !query.trim()) return;
+    setSearching(true);
+    setHits(null);
+    try {
+      const h = await queryKnowledge(selectedId, query.trim(), 8);
+      setHits(h);
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const selected = collections.find((c) => c.id === selectedId);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between h-14 px-4 border-b border-border/40">
+      <div className="flex items-center justify-between h-14 px-4 border-b border-border/40 shrink-0">
         <div className="flex items-center gap-3">
           <BookOpen className="h-5 w-5 text-primary" />
           <h1 className="font-heading font-semibold">Knowledge Base</h1>
-          <Badge variant="secondary" className="text-xs font-heading">
-            <Database className="h-3 w-3 mr-1" /> RAG Pipeline
+          <Badge variant="outline" className="text-xs font-heading text-muted-foreground">
+            <Database className="h-3 w-3 mr-1" /> Embeddings (OpenAI)
           </Badge>
         </div>
-        <Button size="sm" className="gap-1.5 font-heading text-xs" onClick={handleCreate}>
-          <Plus className="h-3.5 w-3.5" /> New Base
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="New collection name…"
+            className="h-9 w-40 sm:w-52 bg-input/30 border-border/40 font-heading text-sm"
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+          />
+          <Button size="sm" className="gap-1.5 font-heading text-xs" onClick={handleCreate}>
+            <Plus className="h-3.5 w-3.5" /> New base
+          </Button>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-hidden p-4">
-        {/* Search */}
-        <div className="relative max-w-sm mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search knowledge bases..."
-            className="pl-9 bg-input/30 border-border/40 font-heading text-sm h-9"
-          />
+      <div className="flex-1 flex min-h-0">
+        <div className="w-64 border-r border-border/40 flex flex-col shrink-0">
+          <div className="p-3 text-xs font-heading text-muted-foreground uppercase tracking-wider">Collections</div>
+          <ScrollArea className="flex-1 px-2 pb-4">
+            {loading ? (
+              <p className="text-sm text-muted-foreground px-2">Loading…</p>
+            ) : collections.length === 0 ? (
+              <p className="text-sm text-muted-foreground px-2">Create a collection to start.</p>
+            ) : (
+              <ul className="space-y-1">
+                {collections.map((c) => (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(c.id)}
+                      className={`w-full text-left rounded-lg px-3 py-2 text-sm font-heading transition-colors ${
+                        selectedId === c.id ? "bg-primary/15 text-primary" : "hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="font-medium truncate">{c.name}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {c.chunkCount} chunks · {c.documentCount} docs
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ScrollArea>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-200px)]">
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="flex-1 flex flex-col min-w-0">
+          {!selected ? (
+            <div className="flex flex-col items-center justify-center flex-1 text-center max-w-md mx-auto px-4">
               <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                 <FolderOpen className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="text-lg font-heading font-semibold mb-2">No knowledge bases</h3>
-              <p className="text-muted-foreground text-sm max-w-sm">
-                Create a knowledge base and upload documents to start chatting with your data.
+              <h3 className="text-lg font-heading font-semibold mb-2">Choose or create a collection</h3>
+              <p className="text-muted-foreground text-sm">
+                Upload .txt, .md, or .pdf files. Chunks are embedded with OpenAI (add your key in Settings) and stored under{" "}
+                <code className="text-xs bg-muted/50 px-1 rounded">data/knowledge.json</code> on the server.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((kb) => (
-                <Card key={kb.id} className="border-border/40 bg-card/60 hover:border-primary/30 transition-all group">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                          <BookOpen className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-sm font-heading">{kb.name}</CardTitle>
-                          <p className="text-xs text-muted-foreground">{kb.lastUpdated}</p>
-                        </div>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className={`text-[10px] ${
-                          kb.status === "ready" ? "text-green-500" :
-                          kb.status === "processing" ? "text-yellow-500" : "text-red-500"
-                        }`}
+            <>
+              <div className="px-4 py-3 border-b border-border/40 flex flex-wrap items-center gap-3 shrink-0">
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-heading font-semibold truncate">{selected.name}</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {selected.chunkCount} chunks · {selected.documentCount} documents
+                  </p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.md,.pdf,text/plain,application/pdf"
+                  className="hidden"
+                  onChange={onFile}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5 bg-transparent"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" /> Upload file
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive gap-1.5"
+                  onClick={() => handleDelete(selected.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
+
+              <div className="px-4 py-3 border-b border-border/40 bg-card/20 shrink-0">
+                <p className="text-xs text-muted-foreground mb-2 font-heading">Semantic search</p>
+                <div className="flex gap-2 flex-wrap">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && runQuery()}
+                      placeholder="Ask something about your documents…"
+                      className="pl-9 h-9 bg-input/30 border-border/40 font-heading text-sm"
+                    />
+                  </div>
+                  <Button size="sm" className="h-9" onClick={runQuery} disabled={searching || !query.trim()}>
+                    {searching ? "Searching…" : "Search"}
+                  </Button>
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1 p-4">
+                {hits === null ? (
+                  <p className="text-sm text-muted-foreground">Run a search to see matching chunks.</p>
+                ) : hits.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No chunks scored above this query.</p>
+                ) : (
+                  <ul className="space-y-3 max-w-3xl">
+                    {hits.map((h, i) => (
+                      <li
+                        key={`${h.docName}-${i}`}
+                        className="rounded-xl border border-border/40 bg-card/40 p-4 text-sm"
                       >
-                        {kb.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-2 mb-3">
-                      <div className="text-center p-2 rounded-lg bg-muted/30">
-                        <p className="text-lg font-heading font-bold">{kb.documents}</p>
-                        <p className="text-[10px] text-muted-foreground">Docs</p>
-                      </div>
-                      <div className="text-center p-2 rounded-lg bg-muted/30">
-                        <p className="text-lg font-heading font-bold">{kb.chunks.toLocaleString()}</p>
-                        <p className="text-[10px] text-muted-foreground">Chunks</p>
-                      </div>
-                      <div className="text-center p-2 rounded-lg bg-muted/30">
-                        <p className="text-lg font-heading font-bold">{kb.size}</p>
-                        <p className="text-[10px] text-muted-foreground">Size</p>
-                      </div>
-                    </div>
-                    {kb.status === "processing" && (
-                      <div className="mb-3">
-                        <Progress value={67} className="h-1.5" />
-                        <p className="text-[10px] text-muted-foreground mt-1">Processing documents... 67%</p>
-                      </div>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1 h-8 text-xs font-heading bg-transparent gap-1" onClick={() => toast.info("Feature coming soon")}>
-                        <Upload className="h-3 w-3" /> Upload
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1 h-8 text-xs font-heading bg-transparent gap-1" onClick={() => toast.info("Feature coming soon")}>
-                        <MessageSquare className="h-3 w-3" /> Chat
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(kb.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="font-heading text-xs text-primary">{h.docName}</span>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {(h.score * 100).toFixed(1)}% match
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{h.text}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ScrollArea>
+            </>
           )}
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );

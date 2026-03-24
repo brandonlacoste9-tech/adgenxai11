@@ -21,6 +21,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NanoClawPage = lazy(() => import("./pages/NanoClawPage"));
 const NullClawPage = lazy(() => import("./pages/NullClawPage"));
 const TaskRunnerPage = lazy(() => import("./pages/TaskRunnerPage"));
+const SitesPage = lazy(() => import("./pages/SitesPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function LoadingScreen() {
@@ -54,6 +55,8 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/chat">{() => <DashboardRoute component={ChatPage} />}</Route>
+        <Route path="/sites/:siteId">{() => <DashboardRoute component={SitesPage} />}</Route>
+        <Route path="/sites">{() => <DashboardRoute component={SitesPage} />}</Route>
         <Route path="/code">{() => <DashboardRoute component={CodePage} />}</Route>
         <Route path="/agents">{() => <DashboardRoute component={AgentsPage} />}</Route>
         <Route path="/knowledge">{() => <DashboardRoute component={KnowledgePage} />}</Route>

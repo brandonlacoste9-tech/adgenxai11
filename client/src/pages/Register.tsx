@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { setDemoSession } from "@/lib/session";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -19,6 +20,7 @@ export default function Register() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    setDemoSession();
     toast.success("Account created! Welcome to AdGenXAI.");
     setTimeout(() => setLocation("/chat"), 800);
   };

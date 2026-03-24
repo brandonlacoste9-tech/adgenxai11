@@ -3,6 +3,10 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import fs from "node:fs";
 import path from "node:path";
+import type { ChatRequestBody } from "./shared/chat-api.ts";
+import { readJsonBody, runChat } from "./server/lib/chat-proxy.ts";
+import studioRouter from "./server/routes/studio.ts";
+import sitesRouter from "./server/routes/sites-router.ts";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
@@ -150,7 +154,59 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+/** Dev-only: same-origin POST /api/chat as production Express. */
+function vitePluginApiChat(): Plugin {
+  return {
+    name: "api-chat-dev",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url?.split("?")[0] ?? "";
+        if (req.method !== "POST" || url !== "/api/chat") {
+          return next();
+        }
+        readJsonBody(req)
+          .then(async (raw) => {
+            const result = await runChat(raw as ChatRequestBody);
+            if ("error" in result) {
+              res.statusCode = 400;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: result.error }));
+              return;
+            }
+            res.statusCode = 200;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ content: result.content }));
+          })
+          .catch((e) => {
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: String(e) }));
+          });
+      });
+    },
+  };
+}
+
+/** Dev: Knowledge, Images, Task runner — same routes as production Express. */
+function vitePluginApiStudio(): Plugin {
+  return {
+    name: "api-studio-dev",
+    configureServer(server) {
+      server.middlewares.use("/api", studioRouter as any);
+      server.middlewares.use("/api", sitesRouter as any);
+    },
+  };
+}
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  vitePluginManusRuntime(),
+  vitePluginManusDebugCollector(),
+  vitePluginApiChat(),
+  vitePluginApiStudio(),
+];
 
 export default defineConfig({
   plugins,

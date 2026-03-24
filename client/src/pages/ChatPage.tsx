@@ -25,6 +25,8 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
+import { apiKeyForProvider, providerForUiModel } from "@shared/chat-api";
+import { loadStoredApiKeys } from "@/lib/api-keys";
 
 interface Message {
   id: string;
@@ -81,52 +83,104 @@ export default function ChatPage() {
 
   const activeConv = conversations.find((c) => c.id === activeConvId)!;
 
+  const keys = loadStoredApiKeys();
+  const liveReady =
+    providerForUiModel(selectedModel) === "ollama" ||
+    !!apiKeyForProvider(keys, providerForUiModel(selectedModel));
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeConv.messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim() || isStreaming) return;
+
+    const convId = activeConvId;
+    const uiModel = selectedModel;
+    const userContent = input.trim();
 
     const userMsg: Message = {
       id: generateId(),
       role: "user",
-      content: input.trim(),
+      content: userContent,
       timestamp: new Date(),
     };
 
-    const updatedConvs = conversations.map((c) => {
-      if (c.id !== activeConvId) return c;
-      const newTitle = c.messages.length === 0 ? input.trim().slice(0, 40) : c.title;
-      return { ...c, title: newTitle, messages: [...c.messages, userMsg] };
-    });
-    setConversations(updatedConvs);
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id !== convId) return c;
+        const newTitle = c.messages.length === 0 ? userContent.slice(0, 40) : c.title;
+        return { ...c, title: newTitle, messages: [...c.messages, userMsg] };
+      }),
+    );
     setInput("");
     setIsStreaming(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const thinking = selectedModel === "deepseek-r1"
-        ? "Let me analyze this step by step...\n1. Understanding the request\n2. Formulating a comprehensive response\n3. Verifying accuracy"
-        : undefined;
+    const apiKeys = loadStoredApiKeys();
+    const provider = providerForUiModel(uiModel);
+    const canTryLive = provider === "ollama" || !!apiKeyForProvider(apiKeys, provider);
+
+    const messagesForApi = [...activeConv.messages, userMsg].map(({ role, content }) => ({
+      role,
+      content,
+    }));
+
+    const finishDemo = () => {
+      const thinking =
+        uiModel === "deepseek-r1"
+          ? "Let me analyze this step by step...\n1. Understanding the request\n2. Formulating a comprehensive response\n3. Verifying accuracy"
+          : undefined;
 
       const aiMsg: Message = {
         id: generateId(),
         role: "assistant",
-        content: SAMPLE_RESPONSES[selectedModel] || "I'm here to help! What would you like to build?",
-        model: selectedModel,
+        content: SAMPLE_RESPONSES[uiModel] || "I'm here to help! What would you like to build?",
+        model: uiModel,
         thinking,
         timestamp: new Date(),
       };
 
       setConversations((prev) =>
-        prev.map((c) => {
-          if (c.id !== activeConvId) return c;
-          return { ...c, messages: [...c.messages, aiMsg] };
-        })
+        prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, aiMsg] } : c)),
       );
       setIsStreaming(false);
-    }, 1200);
+    };
+
+    if (canTryLive) {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: uiModel, messages: messagesForApi, apiKeys }),
+        });
+        const data = (await res.json()) as { content?: string; error?: string };
+        if (!res.ok) {
+          throw new Error(data.error || `HTTP ${res.status}`);
+        }
+        const text = data.content ?? "";
+        if (!text) {
+          throw new Error("Empty response from model");
+        }
+        const aiMsg: Message = {
+          id: generateId(),
+          role: "assistant",
+          content: text,
+          model: uiModel,
+          timestamp: new Date(),
+        };
+        setConversations((prev) =>
+          prev.map((c) => (c.id === convId ? { ...c, messages: [...c.messages, aiMsg] } : c)),
+        );
+        setIsStreaming(false);
+        return;
+      } catch (e) {
+        toast.error(`Live chat failed: ${String(e)}. Showing demo reply.`);
+        finishDemo();
+        return;
+      }
+    }
+
+    setTimeout(finishDemo, 1200);
   };
 
   const handleNewChat = () => {
@@ -217,9 +271,17 @@ export default function ChatPage() {
               </SelectContent>
             </Select>
           </div>
-          <Badge variant="secondary" className="font-heading text-xs">
-            <Sparkles className="h-3 w-3 mr-1 text-primary" /> 50 credits
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="secondary"
+              className={`font-heading text-xs ${liveReady ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400" : ""}`}
+            >
+              {liveReady ? "Live API" : "Demo"}
+            </Badge>
+            <Badge variant="secondary" className="font-heading text-xs">
+              <Sparkles className="h-3 w-3 mr-1 text-primary" /> 50 credits
+            </Badge>
+          </div>
         </div>
 
         {/* Messages */}

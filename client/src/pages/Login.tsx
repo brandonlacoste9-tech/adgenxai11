@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { setDemoSession } from "@/lib/session";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -19,11 +20,13 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setDemoSession();
     toast.success("Welcome back! Redirecting to your studio...");
     setTimeout(() => setLocation("/chat"), 800);
   };
 
   const handleGuest = () => {
+    setDemoSession();
     toast.info("Entering as guest — 50 free credits available");
     setLocation("/chat");
   };

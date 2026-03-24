@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    Landing Page — AdGenXAI "Amber Atelier"
-   Hero with floating dashboard, features grid,
-   pricing tiers, CTA, footer.
+   Hero, features, workflow, BYOK pricing note, CTA, footer.
    ═══════════════════════════════════════════════════════ */
 
 import { Link } from "wouter";
@@ -22,9 +21,6 @@ import {
   Shield,
   Globe,
   Eye,
-  Container,
-  Binary,
-  Play,
   ExternalLink,
 } from "lucide-react";
 
@@ -36,76 +32,43 @@ const FEATURE_AGENTS = "https://d2xsxph8kpxj0f.cloudfront.net/310519663288972865
 
 const features = [
   {
-    icon: MessageSquare,
-    title: "Chat Studio",
-    description: "Stream conversations with GPT-4.1, Claude, DeepSeek, Moonshot, and Ollama. Markdown rendering, code blocks, thinking sections, and vision support.",
-    image: FEATURE_CHAT,
-  },
-  {
     icon: Code2,
     title: "Code Builder",
-    description: "Generate full React + Tailwind components from prompts or screenshots. Live preview and one-click deploy.",
+    description:
+      "Describe a landing page, dashboard, or mini-app in plain language. The model returns HTML you preview live in the browser, then copy or download. Built for shipping real pages fast — wire your API keys in Settings.",
     image: FEATURE_CODE,
   },
   {
+    icon: MessageSquare,
+    title: "Chat Studio",
+    description:
+      "Talk to GPT-4-class, Claude, DeepSeek, Kimi, or local Ollama through one interface. Same models power chat and code: add keys once, iterate in markdown with code blocks.",
+    image: FEATURE_CHAT,
+  },
+  {
     icon: Bot,
-    title: "OpenClaw",
-    description: "Build custom AI agents with system prompts, model selection, and built-in tools. Browse the agent marketplace or create your own.",
+    title: "Agents",
+    description:
+      "Create agents with your own system prompts and models, test them in the wizard, and use them to steer Code Builder. No fake marketplace — you own the definitions.",
     image: FEATURE_AGENTS,
   },
   {
     icon: BookOpen,
-    title: "Knowledge Base",
-    description: "Upload PDFs and documents, chunk and embed them, then chat with your knowledge. Full RAG pipeline with multiple knowledge bases.",
+    title: "Knowledge & RAG",
+    description:
+      "Room for document upload, chunking, and vector search when you connect a backend. The UI is ready to grow into a full knowledge workflow for site and app content.",
   },
   {
     icon: ImageIcon,
-    title: "Image Generation",
-    description: "Create stunning images with DALL-E 3 and Stable Diffusion. Gallery view, download, and share your AI-generated artwork.",
+    title: "Images & media",
+    description:
+      "Hook up DALL·E, SDXL, or another image API when you need hero art, icons, or marketing visuals alongside your builds.",
   },
   {
     icon: Globe,
-    title: "Multi-Language",
-    description: "Full internationalization with English, French, Spanish, and Portuguese. Your AI Studio speaks your language.",
-  },
-];
-
-const pricingTiers = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    credits: "50 credits/month",
-    features: ["5 AI models", "Chat Studio", "Code Builder (basic)", "1 Knowledge Base", "Community agents"],
-    cta: "Get Started Free",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "$20",
-    period: "/month",
-    credits: "500 credits/month",
-    features: ["All AI models", "Unlimited chat history", "Code Builder + deploy", "5 Knowledge Bases", "Custom agents", "Image generation", "Priority support"],
-    cta: "Upgrade to Pro",
-    highlighted: true,
-  },
-  {
-    name: "Studio",
-    price: "$50",
-    period: "/month",
-    credits: "2,000 credits/month",
-    features: ["Everything in Pro", "Unlimited Knowledge Bases", "Advanced RAG pipeline", "Agent marketplace", "API access", "Team collaboration", "Dedicated support"],
-    cta: "Go Studio",
-    highlighted: false,
-  },
-  {
-    name: "Enterprise",
-    price: "$100",
-    period: "/month",
-    credits: "5,000 credits/month",
-    features: ["Everything in Studio", "White-label branding", "Unlimited team seats", "Custom model fine-tuning", "SLA guarantee", "Dedicated account manager", "Pay-as-you-go top-ups"],
-    cta: "Go Enterprise",
-    highlighted: false,
+    title: "Your stack, your keys",
+    description:
+      "Bring-your-own-key: nothing is billed through AdGenXAI. Keys stay in your browser; requests proxy through your dev server or host so you stay in control.",
   },
 ];
 
@@ -147,16 +110,17 @@ export default function Landing() {
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm font-heading text-muted-foreground hover:text-foreground transition-colors">Features</a>
+              <a href="#workflow" className="text-sm font-heading text-muted-foreground hover:text-foreground transition-colors">Workflow</a>
               <a href="#pricing" className="text-sm font-heading text-muted-foreground hover:text-foreground transition-colors">Pricing</a>
-              <a href="#providers" className="text-sm font-heading text-muted-foreground hover:text-foreground transition-colors">Providers</a>
+              <a href="#providers" className="text-sm font-heading text-muted-foreground hover:text-foreground transition-colors">Models</a>
             </div>
             <div className="flex items-center gap-3">
               <Link href="/login">
                 <Button variant="ghost" size="sm" className="font-heading">Sign In</Button>
               </Link>
-              <Link href="/chat">
+              <Link href="/code">
                 <Button size="sm" className="font-heading gap-1.5">
-                  Try Free <ArrowRight className="h-3.5 w-3.5" />
+                  Build <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
             </div>
@@ -187,43 +151,43 @@ export default function Landing() {
             >
               <motion.div variants={fadeUp} custom={0}>
                 <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-heading border-primary/20">
-                  <Zap className="mr-1.5 h-3.5 w-3.5 text-primary" /> 50 free credits — no sign-up required
+                  <Zap className="mr-1.5 h-3.5 w-3.5 text-primary" /> AI studio for websites & apps
                 </Badge>
               </motion.div>
 
               <motion.h1 variants={fadeUp} custom={1} className="font-display text-5xl sm:text-6xl lg:text-7xl tracking-tight mb-6 leading-[1.1]">
-                <span className="text-foreground">Your AI.</span>{" "}
-                <span className="text-primary">Your Studio.</span>
+                <span className="text-foreground">Ship sites and</span>{" "}
+                <span className="text-primary">apps</span>
                 <br />
-                <span className="text-foreground">Your Rules.</span>
+                <span className="text-foreground">from conversation.</span>
               </motion.h1>
 
               <motion.p variants={fadeUp} custom={2} className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
-                Build apps and websites you can actually see. Chat with GPT-4.1, Claude, DeepSeek, and more. Generate code, deploy agents with OpenClaw, and create images — all from one premium AI studio.
+                Prompt → working HTML with a live preview. Chat with frontier models for specs, copy, and debugging. Custom agents keep your stack consistent. You bring the API keys; the studio keeps you in flow.
               </motion.p>
 
               <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-start gap-4">
-                <Link href="/chat">
+                <Link href="/code">
                   <Button size="lg" className="text-base px-8 font-heading gap-2">
-                    Start Building Free <ArrowRight className="h-5 w-5" />
+                    Open Code Builder <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link href="/login">
+                <Link href="/chat">
                   <Button size="lg" variant="outline" className="text-base px-8 font-heading bg-transparent">
-                    Sign In
+                    Open Chat
                   </Button>
                 </Link>
               </motion.div>
 
-              <motion.div variants={fadeUp} custom={4} className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+              <motion.div variants={fadeUp} custom={4} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <Shield className="h-4 w-4 text-primary" /> API keys stay local
+                  <Eye className="h-4 w-4 text-primary" /> Live HTML preview
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Eye className="h-4 w-4 text-primary" /> Live preview
+                  <Shield className="h-4 w-4 text-primary" /> Keys in your browser
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Zap className="h-4 w-4 text-primary" /> 50 free credits
+                  <Code2 className="h-4 w-4 text-primary" /> Export &amp; host anywhere
                 </span>
               </motion.div>
             </motion.div>
@@ -255,7 +219,7 @@ export default function Landing() {
       <section id="providers" className="py-12 px-4">
         <div className="max-w-5xl mx-auto">
           <p className="text-center text-sm text-muted-foreground font-heading mb-8 uppercase tracking-widest">
-            Powered by 5 AI Providers
+            Models you can wire up
           </p>
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
             {providers.map((p) => (
@@ -281,11 +245,11 @@ export default function Landing() {
             className="mb-16"
           >
             <h2 className="font-display text-4xl sm:text-5xl mb-4">
-              Everything you need in{" "}
-              <span className="text-primary">one studio</span>
+              One studio to{" "}
+              <span className="text-primary">design &amp; build</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl leading-relaxed">
-              From chat to code generation, agent building to knowledge management — AdGenXAI is your complete AI workspace.
+              Go from idea to previewable UI without leaving the browser. Chat for reasoning, Code Builder for pages and prototypes, agents for repeatable style — then plug in storage, billing, and image APIs when you need them.
             </p>
           </motion.div>
 
@@ -353,8 +317,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Claw Ecosystem */}
-      <section id="ecosystem" className="py-24 px-4 relative overflow-hidden">
+      {/* Workflow — how you build */}
+      <section id="workflow" className="py-24 px-4 relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-violet-500/5 rounded-full blur-3xl" />
@@ -367,78 +331,65 @@ export default function Landing() {
             className="text-center mb-16"
           >
             <Badge variant="secondary" className="mb-4 text-xs px-3 py-1 bg-primary/10 text-primary border-primary/20">
-              The Claw Ecosystem
+              How building works
             </Badge>
             <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Three runtimes.<br />One platform.
+              From prompt to <span className="text-primary">preview</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From cloud-scale agent swarms to 678KB edge binaries — AdGenXAI gives you the right runtime for every task.
+              Use the studio for the creative loop: clarify the product in chat, generate pages in Code Builder, refine with the same models. Deploy the HTML anywhere — or swap in React later in your own repo.
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {[
               {
-                name: "OpenClaw",
-                tagline: "Full-featured agent marketplace",
-                desc: "300+ specialized agents. Multi-model support. Build, test, and deploy agents with a full studio UI. The brain of your workflow.",
+                step: "1",
+                title: "Shape the product",
+                desc: "Chat Studio is for requirements, UX copy, edge cases, and debugging ideas before you lock layout.",
+                icon: MessageSquare,
+                href: "/chat",
+                cta: "Open chat",
+              },
+              {
+                step: "2",
+                title: "Generate the UI",
+                desc: "Code Builder asks the model for a full HTML document, shows it in a sandboxed preview, and lets you download or paste into your stack.",
+                icon: Code2,
+                href: "/code",
+                cta: "Open builder",
+              },
+              {
+                step: "3",
+                title: "Repeat with agents",
+                desc: "Save system prompts as agents so every page matches your brand voice, stack rules, and accessibility standards.",
                 icon: Bot,
-                color: "text-amber-400",
-                bg: "bg-amber-400/10",
-                border: "border-amber-400/20",
-                badge: "Flagship",
-                badgeColor: "bg-amber-400/10 text-amber-400 border-amber-400/20",
                 href: "/agents",
+                cta: "Build agents",
               },
-              {
-                name: "NanoClaw",
-                tagline: "Secure containerized runtime",
-                desc: "Each agent runs in its own Docker container. Zero-trust execution, network isolation, Agent Swarms for parallel task coordination.",
-                icon: Container,
-                color: "text-blue-400",
-                bg: "bg-blue-400/10",
-                border: "border-blue-400/20",
-                badge: "Secure",
-                badgeColor: "bg-blue-400/10 text-blue-400 border-blue-400/20",
-                href: "/nanoclaw",
-              },
-              {
-                name: "NullClaw",
-                tagline: "Ultra-edge agent binary",
-                desc: "678KB Zig-compiled binary. Boots in 2ms. Runs on 1MB RAM. WASM-compatible for client-side execution. Sovereign, offline-capable.",
-                icon: Binary,
-                color: "text-violet-400",
-                bg: "bg-violet-400/10",
-                border: "border-violet-400/20",
-                badge: "Edge",
-                badgeColor: "bg-violet-400/10 text-violet-400 border-violet-400/20",
-                href: "/nullclaw",
-              },
-            ].map((runtime, i) => (
+            ].map((item, i) => (
               <motion.div
-                key={runtime.name}
+                key={item.step}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
               >
-                <Card className={`h-full border ${runtime.border} bg-card/60 hover:bg-card/90 transition-all duration-300 group`}>
+                <Card className="h-full border-border/40 bg-card/60 hover:border-primary/25 transition-all duration-300">
                   <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-11 h-11 rounded-xl ${runtime.bg} flex items-center justify-center`}>
-                        <runtime.icon className={`h-6 w-6 ${runtime.color}`} />
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-2xl font-display font-bold text-primary/80">{item.step}</span>
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <item.icon className="h-5 w-5 text-primary" />
                       </div>
-                      <Badge variant="outline" className={`text-[10px] px-2 ${runtime.badgeColor}`}>{runtime.badge}</Badge>
                     </div>
-                    <CardTitle className="text-xl font-display">{runtime.name}</CardTitle>
-                    <p className={`text-xs font-medium ${runtime.color}`}>{runtime.tagline}</p>
+                    <CardTitle className="text-lg font-display">{item.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-sm leading-relaxed mb-4">{runtime.desc}</CardDescription>
-                    <Link href={runtime.href}>
-                      <Button variant="ghost" size="sm" className={`text-xs gap-1.5 h-8 ${runtime.color} hover:bg-current/10 px-2`}>
-                        Explore {runtime.name} <ArrowRight className="h-3 w-3" />
+                    <CardDescription className="text-sm leading-relaxed mb-4">{item.desc}</CardDescription>
+                    <Link href={item.href}>
+                      <Button variant="ghost" size="sm" className="text-xs gap-1.5 h-8 text-primary hover:bg-primary/10 px-2">
+                        {item.cta} <ArrowRight className="h-3 w-3" />
                       </Button>
                     </Link>
                   </CardContent>
@@ -447,32 +398,22 @@ export default function Landing() {
             ))}
           </div>
 
-          {/* Task Runner CTA + OpenManus badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-2xl border border-primary/20 bg-primary/5"
+            className="p-6 rounded-2xl border border-border/40 bg-muted/20"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                <Play className="h-6 w-6 text-primary" />
-              </div>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h3 className="font-heading font-bold text-lg">One-Button Task Runner</h3>
-                <p className="text-sm text-muted-foreground">Enter any task. Hit Run. Watch the agent plan, use tools, and deliver results — live.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/30 border border-border/40">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs text-muted-foreground">Powered by</span>
-                <span className="text-xs font-semibold">OpenManus</span>
+                <h3 className="font-heading font-bold text-lg mb-1">More automation later</h3>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  Task runner, container runtimes, and edge workers are placeholders until you connect frameworks like OpenManus or your own job queue. The core studio already helps you ship static sites and app shells today.
+                </p>
               </div>
               <Link href="/tasks">
-                <Button size="sm" className="gap-2 text-sm">
-                  <Play className="h-4 w-4" />
-                  Try Task Runner
+                <Button size="sm" variant="outline" className="gap-2 text-sm shrink-0 bg-transparent">
+                  View task runner <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -480,87 +421,66 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing — honest BYOK */}
       <section id="pricing" className="py-24 px-4 relative">
         <div className="absolute inset-0">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
         </div>
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-3xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="mb-16"
+            className="mb-10 text-center"
           >
             <h2 className="font-display text-4xl sm:text-5xl mb-4">
-              Simple, <span className="text-primary">transparent</span> pricing
+              You pay <span className="text-primary">your providers</span>
             </h2>
-            <p className="text-muted-foreground text-lg">Start free. Scale as you grow. No hidden fees.</p>
+            <p className="text-muted-foreground text-lg">
+              AdGenXAI is an open studio: run it locally or on your own host. There is no in-app billing, credit packs, or subscription here — only whatever your API keys cost at OpenAI, Anthropic, and the rest.
+            </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl">
-            {pricingTiers.map((tier, i) => (
-              <motion.div
-                key={tier.name}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-              >
-                <Card className={`relative border-border/40 bg-card/60 backdrop-blur-sm h-full ${tier.highlighted ? "border-primary/50 shadow-lg shadow-primary/10 md:scale-105" : ""}`}>
-                  {tier.highlighted && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary text-primary-foreground px-3 font-heading">Most Popular</Badge>
-                    </div>
-                  )}
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-heading">{tier.name}</CardTitle>
-                    <div className="mt-3">
-                      <span className="text-4xl font-heading font-bold">{tier.price}</span>
-                      <span className="text-muted-foreground text-sm ml-1">{tier.period}</span>
-                    </div>
-                    <CardDescription className="mt-2 text-primary font-heading font-medium">{tier.credits}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <ul className="space-y-3 mb-6">
-                      {tier.features.map((feature) => (
-                        <li key={feature} className="flex items-center gap-2.5 text-sm">
-                          <Check className="h-4 w-4 text-primary shrink-0" />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href={tier.name === "Free" ? "/chat" : `/register?plan=${tier.name.toLowerCase()}`}>
-                      <Button
-                        className={`w-full font-heading ${tier.highlighted ? "" : "bg-transparent"}`}
-                        variant={tier.highlighted ? "default" : "outline"}
-                      >
-                        {tier.cta}
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="mt-10 max-w-6xl">
-            <div className="rounded-2xl border border-border/40 bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-heading font-semibold text-lg mb-1">Need more credits?</h3>
-                <p className="text-sm text-muted-foreground">Buy credit packs anytime. No subscription required. Credits never expire.</p>
-              </div>
-              <div className="flex gap-3 shrink-0 flex-wrap">
-                <Badge variant="secondary" className="font-heading text-sm px-3 py-1.5">100 credits — $5</Badge>
-                <Badge variant="secondary" className="font-heading text-sm px-3 py-1.5">500 credits — $20</Badge>
-                <Badge variant="secondary" className="font-heading text-sm px-3 py-1.5">2,000 credits — $60</Badge>
-              </div>
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Credit costs: Chat = 1 credit | Code Generation = 5 credits | Image Generation = 10 credits
-            </p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-lg font-heading">What that means in practice</CardTitle>
+                <CardDescription>
+                  Add keys in Settings once. Chat and Code Builder call your chosen models through the dev proxy; usage shows up on your provider dashboards, not ours.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  "No fake plans or credit meters in this app",
+                  "Export HTML and host anywhere; extend the repo when you need React or a backend",
+                  "Self-host the Express + Vite stack if you want keys off your laptop",
+                ].map((line) => (
+                  <div key={line} className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span className="text-muted-foreground">{line}</span>
+                  </div>
+                ))}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <Link href="/code" className="flex-1">
+                    <Button className="w-full font-heading gap-2">
+                      Start in Code Builder <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/chat" className="flex-1">
+                    <Button variant="outline" className="w-full font-heading bg-transparent">
+                      Open chat
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
@@ -573,15 +493,22 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="font-display text-4xl sm:text-5xl mb-4">Ready to build with AI?</h2>
+            <h2 className="font-display text-4xl sm:text-5xl mb-4">Ship your next page or app shell</h2>
             <p className="text-muted-foreground text-lg mb-8">
-              Join thousands of developers and creators using AdGenXAI to supercharge their workflow.
+              Use the studio to iterate from conversation to live HTML preview, then take the output into your deployment pipeline.
             </p>
-            <Link href="/chat">
-              <Button size="lg" className="text-base px-8 font-heading gap-2">
-                Start Free — No Sign-Up <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href="/code">
+                <Button size="lg" className="text-base px-8 font-heading gap-2 w-full sm:w-auto">
+                  Open Code Builder <ArrowRight className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/chat">
+                <Button size="lg" variant="outline" className="text-base px-8 font-heading w-full sm:w-auto bg-transparent">
+                  Chat first
+                </Button>
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -595,8 +522,8 @@ export default function Landing() {
             </div>
             <span className="font-heading font-bold text-primary">AdGenXAI</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} AdGenXAI. Your AI. Your Studio. Your Rules.
+          <p className="text-sm text-muted-foreground text-center sm:text-left">
+            &copy; {new Date().getFullYear()} AdGenXAI — AI studio for websites and apps. Your keys, your stack.
           </p>
         </div>
       </footer>

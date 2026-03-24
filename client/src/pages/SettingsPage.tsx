@@ -3,7 +3,7 @@
    API keys, model config, appearance, profile.
    ═══════════════════════════════════════════════════════ */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,21 +24,44 @@ import {
   Save,
   Eye,
   EyeOff,
+  Github,
 } from "lucide-react";
 import { toast } from "sonner";
+import { STORAGE_KEYS, saveApiKeys, loadGithubToken, saveGithubToken } from "@/lib/api-keys";
+
+const DEFAULT_OLLAMA = "http://127.0.0.1:11434";
 
 export default function SettingsPage() {
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [keys, setKeys] = useState({
+    openai: "",
+    anthropic: "",
+    deepseek: "",
+    moonshot: "",
+    ollamaBase: DEFAULT_OLLAMA,
+  });
+  const [githubToken, setGithubToken] = useState("");
+
+  useEffect(() => {
+    setKeys({
+      openai: localStorage.getItem(STORAGE_KEYS.openai) ?? "",
+      anthropic: localStorage.getItem(STORAGE_KEYS.anthropic) ?? "",
+      deepseek: localStorage.getItem(STORAGE_KEYS.deepseek) ?? "",
+      moonshot: localStorage.getItem(STORAGE_KEYS.moonshot) ?? "",
+      ollamaBase: localStorage.getItem(STORAGE_KEYS.ollamaBase) ?? DEFAULT_OLLAMA,
+    });
+    setGithubToken(loadGithubToken() ?? "");
+  }, []);
 
   const toggleKey = (provider: string) => {
     setShowKeys((prev) => ({ ...prev, [provider]: !prev[provider] }));
   };
 
   const providers = [
-    { name: "OpenAI", key: "sk-proj-••••••••••••••••", placeholder: "sk-proj-..." },
-    { name: "Anthropic", key: "", placeholder: "sk-ant-..." },
-    { name: "DeepSeek", key: "", placeholder: "sk-..." },
-    { name: "Moonshot", key: "", placeholder: "sk-..." },
+    { id: "openai" as const, name: "OpenAI", placeholder: "sk-proj-..." },
+    { id: "anthropic" as const, name: "Anthropic", placeholder: "sk-ant-api03-..." },
+    { id: "deepseek" as const, name: "DeepSeek", placeholder: "sk-..." },
+    { id: "moonshot" as const, name: "Moonshot (Kimi)", placeholder: "sk-..." },
   ];
 
   return (
@@ -79,7 +102,9 @@ export default function SettingsPage() {
               <div>
                 <h2 className="font-heading font-semibold text-lg mb-1">API Keys</h2>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Configure your API keys for each provider. Keys are stored locally and never sent to our servers.
+                  Keys are saved in your browser only. Chat Studio sends them to this app&apos;s server (dev or your
+                  Node host), which forwards requests to the provider — not to AdGenXAI. For production on static
+                  hosts (e.g. Vercel) without a backend, use demo chat or add a serverless proxy.
                 </p>
               </div>
 
@@ -95,9 +120,11 @@ export default function SettingsPage() {
                     <div className="flex gap-2">
                       <Input
                         type={showKeys[provider.name] ? "text" : "password"}
-                        defaultValue={provider.key}
+                        value={keys[provider.id]}
+                        onChange={(e) => setKeys((s) => ({ ...s, [provider.id]: e.target.value }))}
                         placeholder={provider.placeholder}
                         className="flex-1 bg-input/30 border-border/40 font-mono text-sm"
+                        autoComplete="off"
                       />
                       <Button
                         variant="outline"
@@ -123,14 +150,58 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label className="text-xs font-heading">Base URL</Label>
                     <Input
-                      defaultValue="http://localhost:11434"
+                      value={keys.ollamaBase}
+                      onChange={(e) => setKeys((s) => ({ ...s, ollamaBase: e.target.value }))}
+                      placeholder={DEFAULT_OLLAMA}
                       className="bg-input/30 border-border/40 font-mono text-sm"
+                      autoComplete="off"
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              <Button className="font-heading gap-2" onClick={() => toast.success("API keys saved!")}>
+              <Card className="border-border/40 bg-card/60">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-heading flex items-center gap-2">
+                    <Github className="h-4 w-4 text-primary" />
+                    GitHub (push sites)
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Fine-grained or classic PAT with <strong>Contents</strong> and <strong>Metadata</strong> (and{" "}
+                    <strong>Administration</strong> if you want “create repo”). Stored only in this browser; sent to your
+                    Node server when you push — never to us.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2">
+                    <Input
+                      type={showKeys.github ? "text" : "password"}
+                      value={githubToken}
+                      onChange={(e) => setGithubToken(e.target.value)}
+                      placeholder="ghp_… or github_pat_…"
+                      className="flex-1 bg-input/30 border-border/40 font-mono text-sm"
+                      autoComplete="off"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="bg-transparent shrink-0"
+                      onClick={() => toggleKey("github")}
+                    >
+                      {showKeys.github ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Button
+                className="font-heading gap-2"
+                onClick={() => {
+                  saveApiKeys(keys);
+                  saveGithubToken(githubToken);
+                  toast.success("API keys and GitHub token saved locally.");
+                }}
+              >
                 <Save className="h-4 w-4" /> Save Keys
               </Button>
             </TabsContent>
