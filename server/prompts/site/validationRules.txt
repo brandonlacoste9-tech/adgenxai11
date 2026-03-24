@@ -1,0 +1,6 @@
+Checklist (honor in the generated HTML):
+- No <script src="..."> pointing at external domains.
+- Every <img> has a non-empty alt attribute (use alt="" only for decorative images).
+- Use <nav> for primary navigation; use <main> for primary page content.
+- Heading order is logical (one h1 if present, then h2, h3 without skipping levels).
+- Language: set <html lang="..."> appropriately when the page language is known.

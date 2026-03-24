@@ -53,4 +53,10 @@ export interface PushGithubResult {
   commitSha: string;
   branch: string;
   htmlUrl: string;
+  /** Typical project-site URL after GitHub Pages is enabled */
+  githubPagesUrl: string;
+  /** Direct link to enable/configure Pages */
+  pagesSettingsUrl: string;
+  /** Short reminder for the UI */
+  pagesHint: string;
 }

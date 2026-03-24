@@ -1,5 +1,6 @@
 import type { ChatMessage, ChatRequestBody, ChatProvider } from "../../shared/chat-api.ts";
-import { apiKeyForProvider } from "../../shared/chat-api.ts";
+import { apiKeyForProvider, isChatPromptJob } from "../../shared/chat-api.ts";
+import { composeSystemPrompt } from "../agents/agentFactory.ts";
 
 function resolveProviderModel(uiModel: string): { provider: ChatProvider; apiModel: string } {
   switch (uiModel) {
@@ -149,9 +150,33 @@ async function callOllama(
   return { content };
 }
 
+function applyPromptJob(body: ChatRequestBody): ChatMessage[] {
+  if (!isChatPromptJob(body.promptJob)) {
+    return body.messages;
+  }
+  return body.messages.filter((m) => m.role === "user" || m.role === "assistant");
+}
+
 export async function runChat(body: ChatRequestBody): Promise<ChatResult> {
   if (!body?.messages?.length) {
     return { error: "messages required" };
+  }
+
+  let messages = body.messages;
+  if (isChatPromptJob(body.promptJob)) {
+    try {
+      const tail = applyPromptJob(body);
+      if (tail.length === 0) {
+        return { error: "promptJob requires at least one user or assistant message" };
+      }
+      const system = await composeSystemPrompt(body.promptJob, {
+        extension: body.systemPromptExtension,
+        siteDesignNotes: body.siteDesignNotes,
+      });
+      messages = [{ role: "system", content: system }, ...tail];
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : String(e) };
+    }
   }
 
   const { provider, apiModel } = resolveProviderModel(body.model);
@@ -179,19 +204,19 @@ export async function runChat(body: ChatRequestBody): Promise<ChatResult> {
 
   switch (provider) {
     case "openai":
-      return callOpenAiCompatible("https://api.openai.com", key!, apiModel, body.messages);
+      return callOpenAiCompatible("https://api.openai.com", key!, apiModel, messages);
     case "deepseek":
-      return callOpenAiCompatible("https://api.deepseek.com", key!, apiModel, body.messages);
+      return callOpenAiCompatible("https://api.deepseek.com", key!, apiModel, messages);
     case "moonshot":
-      return callOpenAiCompatible("https://api.moonshot.cn", key!, apiModel, body.messages);
+      return callOpenAiCompatible("https://api.moonshot.cn", key!, apiModel, messages);
     case "anthropic":
-      return callAnthropic(key!, apiModel, body.messages);
+      return callAnthropic(key!, apiModel, messages);
     case "ollama": {
       const base =
         body.apiKeys?.ollamaBaseUrl?.trim() ||
         process.env.OLLAMA_BASE_URL ||
         "http://127.0.0.1:11434";
-      return callOllama(base, apiModel, body.messages);
+      return callOllama(base, apiModel, messages);
     }
     default:
       return { error: "Unknown provider" };

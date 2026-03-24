@@ -22,22 +22,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAgent, ActiveAgent } from "@/contexts/AgentContext";
-import { Link, useSearch } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { agentLabelToChatModelId, canCallChatApiForModel, postChat } from "@/lib/agent-chat";
 import type { SiteDto, SitePageDto } from "@shared/sites-api";
+import { extractHtmlDocument } from "@shared/extract-html";
 import { fetchSite, patchSitePage } from "@/lib/sites-client";
+import { loadStoredApiKeys } from "@/lib/api-keys";
+import { useLocation } from "wouter";
 
 function htmlFileLabel(routePath: string): string {
   return routePath === "index" ? "index.html" : `${routePath}.html`;
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 }
 
 /* ─── Placeholder preview; generation uses /api/chat ─── */
@@ -49,16 +43,6 @@ const PLACEHOLDER_HTML = `<!DOCTYPE html>
   <p>Add API keys in <strong class="text-zinc-200">Settings</strong>, describe what you want, then <strong class="text-zinc-200">Generate</strong>. The model returns one HTML document via the same <code class="text-amber-400/90">/api/chat</code> route as Chat Studio.</p>
 </body>
 </html>`;
-
-function extractHtmlDocument(reply: string): string {
-  const trimmed = reply.trim();
-  const fullFence = trimmed.match(/^```(?:html)?\s*([\s\S]*?)```/im);
-  if (fullFence) return fullFence[1].trim();
-  const inner = trimmed.match(/```(?:html)?\s*([\s\S]*?)```/i);
-  if (inner) return inner[1].trim();
-  if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) return trimmed;
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><title>Output</title></head><body class="p-6"><pre>${escapeHtml(trimmed)}</pre></body></html>`;
-}
 
 const TEMPLATES = [
   { name: "Landing Page", prompt: "Build a modern dark-mode SaaS landing page with hero, features, and pricing" },
@@ -157,6 +141,7 @@ function AgentPickerDialog({
 /* ─── Main Page ──────────────────────────────────────── */
 export default function CodePage() {
   const { activeAgent, setActiveAgent, installedAgents } = useAgent();
+  const [, setLocation] = useLocation();
   const search = useSearch();
   const sp = new URLSearchParams(search);
   const qSite = sp.get("site") ?? undefined;
@@ -169,6 +154,7 @@ export default function CodePage() {
   const [showAgentPicker, setShowAgentPicker] = useState(false);
   const [generationLog, setGenerationLog] = useState<string[]>([]);
   const [showLog, setShowLog] = useState(false);
+  const [liveNavBusy, setLiveNavBusy] = useState(false);
   const [siteCtx, setSiteCtx] = useState<SiteDto | null>(null);
   const [pageCtx, setPageCtx] = useState<SitePageDto | null>(null);
 
@@ -225,13 +211,6 @@ export default function CodePage() {
     const addLog = (msg: string) => setGenerationLog((prev) => [...prev, msg]);
     addLog(`[chat] ${modelId}`);
 
-    const systemBase =
-      activeAgent?.systemPrompt?.trim() ||
-      "You are an expert web developer. Respond with exactly one complete HTML5 document.";
-    let system = `${systemBase}\nOutput raw HTML only (optionally wrapped in a single \`\`\`html code fence). Use Tailwind via CDN if you need styling.`;
-    if (siteCtx?.designNotes?.trim()) {
-      system += `\n\nSite-wide design brief (keep consistent with other pages on this site):\n${siteCtx.designNotes.trim()}`;
-    }
     const user =
       pageCtx && siteCtx
         ? `You are editing the page "${pageCtx.title}" (output will be saved as ${htmlFileLabel(pageCtx.routePath)}) for the site "${siteCtx.name}".\n\nBuild a single self-contained HTML5 document for:\n\n${prompt.trim()}`
@@ -239,11 +218,13 @@ export default function CodePage() {
 
     try {
       const raw = await postChat(
-        [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+        [{ role: "user", content: user }],
         modelId,
+        {
+          promptJob: "site",
+          systemPromptExtension: activeAgent?.systemPrompt?.trim() || undefined,
+          siteDesignNotes: siteCtx?.designNotes?.trim() || undefined,
+        },
       );
       setCode(extractHtmlDocument(raw));
       addLog("[done] preview updated");
@@ -382,6 +363,20 @@ export default function CodePage() {
               <><RotateCcw className="h-4 w-4 animate-spin" /> Generating...</>
             ) : (
               <><Wand2 className="h-4 w-4" /> {activeAgent ? `Ask ${activeAgent.name.split(" ")[0]}` : "Generate"}</>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={liveNavBusy || isGenerating || !prompt.trim()}
+            className="gap-1.5 font-heading text-sm bg-transparent"
+            onClick={() => void handleLiveBuild()}
+            title="Run the same site generation with a live SSE monitor"
+          >
+            {liveNavBusy ? (
+              <><RotateCcw className="h-4 w-4 animate-spin" /> Starting…</>
+            ) : (
+              <><Play className="h-4 w-4" /> Live build</>
             )}
           </Button>
         </div>

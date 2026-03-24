@@ -21,6 +21,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NanoClawPage = lazy(() => import("./pages/NanoClawPage"));
 const NullClawPage = lazy(() => import("./pages/NullClawPage"));
 const TaskRunnerPage = lazy(() => import("./pages/TaskRunnerPage"));
+const BuildMonitorPage = lazy(() => import("./pages/BuildMonitorPage"));
 const SitesPage = lazy(() => import("./pages/SitesPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/sites/:siteId">{() => <DashboardRoute component={SitesPage} />}</Route>
         <Route path="/sites">{() => <DashboardRoute component={SitesPage} />}</Route>
         <Route path="/code">{() => <DashboardRoute component={CodePage} />}</Route>
+        <Route path="/build/:id">{() => <DashboardRoute component={BuildMonitorPage} />}</Route>
         <Route path="/agents">{() => <DashboardRoute component={AgentsPage} />}</Route>
         <Route path="/knowledge">{() => <DashboardRoute component={KnowledgePage} />}</Route>
         <Route path="/images">{() => <DashboardRoute component={ImagesPage} />}</Route>

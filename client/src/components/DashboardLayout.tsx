@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">Guest</p>
-                <p className="text-xs text-muted-foreground truncate">50 credits</p>
+                <p className="text-xs text-muted-foreground truncate">BYOK studio</p>
               </div>
             )}
             {collapsed ? (

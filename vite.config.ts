@@ -7,6 +7,7 @@ import type { ChatRequestBody } from "./shared/chat-api.ts";
 import { readJsonBody, runChat } from "./server/lib/chat-proxy.ts";
 import studioRouter from "./server/routes/studio.ts";
 import sitesRouter from "./server/routes/sites-router.ts";
+import buildRouter from "./server/routes/build-router.ts";
 import { defineConfig, type Plugin, type ViteDevServer } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
@@ -194,6 +195,7 @@ function vitePluginApiStudio(): Plugin {
     configureServer(server) {
       server.middlewares.use("/api", studioRouter as any);
       server.middlewares.use("/api", sitesRouter as any);
+      server.middlewares.use("/api", buildRouter as any);
     },
   };
 }

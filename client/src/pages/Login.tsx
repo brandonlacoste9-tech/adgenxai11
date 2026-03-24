@@ -27,7 +27,7 @@ export default function Login() {
 
   const handleGuest = () => {
     setDemoSession();
-    toast.info("Entering as guest — 50 free credits available");
+    toast.info("Entering as guest — add API keys in Settings when you use live models.");
     setLocation("/chat");
   };
 
@@ -85,7 +85,7 @@ export default function Login() {
           </div>
 
           <Button variant="outline" className="w-full font-heading bg-transparent" onClick={handleGuest}>
-            Continue as Guest (50 free credits)
+            Continue as Guest
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">

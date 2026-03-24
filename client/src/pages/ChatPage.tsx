@@ -151,7 +151,12 @@ export default function ChatPage() {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ model: uiModel, messages: messagesForApi, apiKeys }),
+          body: JSON.stringify({
+            model: uiModel,
+            messages: messagesForApi,
+            apiKeys,
+            promptJob: "chat",
+          }),
         });
         const data = (await res.json()) as { content?: string; error?: string };
         if (!res.ok) {
@@ -279,7 +284,7 @@ export default function ChatPage() {
               {liveReady ? "Live API" : "Demo"}
             </Badge>
             <Badge variant="secondary" className="font-heading text-xs">
-              <Sparkles className="h-3 w-3 mr-1 text-primary" /> 50 credits
+              <Sparkles className="h-3 w-3 mr-1 text-primary" /> Your keys
             </Badge>
           </div>
         </div>

@@ -6,6 +6,7 @@ import type { ChatRequestBody } from "../shared/chat-api.ts";
 import { runChat } from "./lib/chat-proxy.ts";
 import studioRouter from "./routes/studio.ts";
 import sitesRouter from "./routes/sites-router.ts";
+import buildRouter from "./routes/build-router.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,7 @@ async function startServer() {
 
   app.use("/api", studioRouter);
   app.use("/api", sitesRouter);
+  app.use("/api", buildRouter);
 
   // Serve static files from dist/public in production
   const staticPath =

@@ -14,10 +14,24 @@ export interface ChatApiKeys {
   ollamaBaseUrl?: string;
 }
 
+/** Versioned prompt families — must match keys in server/prompts/manifest.json */
+export const CHAT_PROMPT_JOB_KEYS = ["chat", "site", "app", "design", "test", "deploy"] as const;
+export type ChatPromptJob = (typeof CHAT_PROMPT_JOB_KEYS)[number];
+
+export function isChatPromptJob(value: unknown): value is ChatPromptJob {
+  return typeof value === "string" && (CHAT_PROMPT_JOB_KEYS as readonly string[]).includes(value);
+}
+
 export interface ChatRequestBody {
   model: string;
   messages: ChatMessage[];
   apiKeys?: ChatApiKeys;
+  /** Load default system prompt for this job; client should send user/assistant turns only. */
+  promptJob?: ChatPromptJob;
+  /** Appended after job defaults (e.g. saved agent system prompt). */
+  systemPromptExtension?: string;
+  /** Extra context for `site` job (design notes). */
+  siteDesignNotes?: string;
 }
 
 export interface ChatResponseBody {

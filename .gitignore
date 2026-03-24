@@ -6,3 +6,4 @@ dist/
 *.log
 .manus-logs/
 data/
+.tmp/

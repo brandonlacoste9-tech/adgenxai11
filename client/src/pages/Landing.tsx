@@ -166,7 +166,7 @@ export default function Landing() {
                 Prompt → working HTML with a live preview. Chat with frontier models for specs, copy, and debugging. Custom agents keep your stack consistent. You bring the API keys; the studio keeps you in flow.
               </motion.p>
 
-              <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row items-start gap-4">
+              <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row flex-wrap items-start gap-3">
                 <Link href="/code">
                   <Button size="lg" className="text-base px-8 font-heading gap-2">
                     Open Code Builder <ArrowRight className="h-5 w-5" />
@@ -175,6 +175,11 @@ export default function Landing() {
                 <Link href="/chat">
                   <Button size="lg" variant="outline" className="text-base px-8 font-heading bg-transparent">
                     Open Chat
+                  </Button>
+                </Link>
+                <Link href="/sites">
+                  <Button size="lg" variant="outline" className="text-base px-8 font-heading bg-transparent gap-2">
+                    <Globe className="h-5 w-5" /> Sites &amp; GitHub
                   </Button>
                 </Link>
               </motion.div>

@@ -1,0 +1,34 @@
+{
+  "version": "1.1.0",
+  "createdAt": "2026-03-24T00:00:00Z",
+  "safetyPath": "safety.txt",
+  "jobs": {
+    "chat": {
+      "promptPath": "chat/system.txt",
+      "description": "General conversation — tone and scope for Chat Studio."
+    },
+    "site": {
+      "promptPath": "site/system.txt",
+      "validationPath": "site/validationRules.txt",
+      "description": "Single-page HTML5 — a11y, semantic markup, no external scripts."
+    },
+    "app": {
+      "promptPath": "app/system.txt",
+      "schemaPath": "app/fileSchema.json",
+      "description": "Multi-file web app as a JSON file list (path + content)."
+    },
+    "design": {
+      "promptPath": "design/system.txt",
+      "description": "Design tokens, theme notes, and a11y-oriented style guidance as structured text/JSON."
+    },
+    "test": {
+      "promptPath": "test/system.txt",
+      "schemaPath": "app/fileSchema.json",
+      "description": "Unit/integration tests as JSON file list matching app builder schema."
+    },
+    "deploy": {
+      "promptPath": "deploy/system.txt",
+      "description": "CI/CD, containers, and hosting config as files or structured instructions."
+    }
+  }
+}

@@ -131,7 +131,7 @@ export async function pushSiteToGithub(
     blobShas.push({ path, sha: blob.data.sha });
   }
 
-  const readme = `# ${site.name}\n\nStatic pages exported from the AdGenXAI studio.\n\n## Pages\n\n${site.pages
+  const readme = `# ${site.name}\n\nStatic pages exported from the AdGenXAI studio.\n\n## GitHub Pages\n\nThis repo includes a \`.nojekyll\` file so GitHub Pages serves your HTML as-is (no Jekyll processing).\n\n## Pages\n\n${site.pages
     .map((p) => `- [\`${pageFileName(p.routePath)}\`](./${pageFileName(p.routePath)}) — ${p.title}`)
     .join("\n")}\n`;
   const readmeB64 = Buffer.from(readme, "utf-8").toString("base64");
@@ -143,6 +143,16 @@ export async function pushSiteToGithub(
     return { error: `README blob failed: ${errMsg(readmeBlob.data)}` };
   }
   blobShas.push({ path: "README.md", sha: readmeBlob.data.sha });
+
+  const nojekB64 = Buffer.from("", "utf-8").toString("base64");
+  const nojekBlob = await gh<{ sha?: string }>(token, "POST", `/repos/${owner}/${repo}/git/blobs`, {
+    content: nojekB64,
+    encoding: "base64",
+  });
+  if (!nojekBlob.ok || !nojekBlob.data.sha) {
+    return { error: `.nojekyll blob failed: ${errMsg(nojekBlob.data)}` };
+  }
+  blobShas.push({ path: ".nojekyll", sha: nojekBlob.data.sha });
 
   const tree = await gh<{ sha?: string }>(token, "POST", `/repos/${owner}/${repo}/git/trees`, {
     base_tree: baseTreeSha,
@@ -187,5 +197,17 @@ export async function pushSiteToGithub(
   }
 
   const htmlUrl = `https://github.com/${owner}/${repo}/tree/${encodeURIComponent(branch)}`;
-  return { commitSha: commit.data.sha, branch, htmlUrl };
+  const ownerLc = owner.toLowerCase();
+  const repoLc = repo.toLowerCase();
+  const githubPagesUrl = `https://${ownerLc}.github.io/${repoLc}/`;
+  const pagesSettingsUrl = `https://github.com/${owner}/${repo}/settings/pages`;
+  const pagesHint = `A .nojekyll file was included so GitHub Pages won’t run Jekyll on your HTML. In Settings → Pages, deploy from branch “${branch}” with folder “/ (root)”. The site URL below may take a minute to go live after you save.`;
+  return {
+    commitSha: commit.data.sha,
+    branch,
+    htmlUrl,
+    githubPagesUrl,
+    pagesSettingsUrl,
+    pagesHint,
+  };
 }

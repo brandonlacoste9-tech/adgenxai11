@@ -136,11 +136,11 @@ function AgentBuilderWizard({ onClose, onSave }: { onClose: () => void; onSave: 
     }
     setTestLoading(true);
     try {
-      const messages = [
-        { role: "system" as const, content: state.systemPrompt.trim() || "You are a helpful assistant." },
-        ...thread.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-      ];
-      const text = await postChat(messages, chatId);
+      const messages = thread.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+      const text = await postChat(messages, chatId, {
+        promptJob: "chat",
+        systemPromptExtension: state.systemPrompt.trim() || "You are a helpful assistant.",
+      });
       setTestMessages((prev) => [...prev, { id: nanoid(), role: "assistant", content: text }]);
     } catch (e) {
       toast.error(String(e));
@@ -475,11 +475,11 @@ function AgentChatPanel({ agent, onClose }: { agent: Agent; onClose: () => void 
     }
     setLoading(true);
     try {
-      const apiMessages = [
-        { role: "system" as const, content: agent.systemPrompt.trim() || "You are a helpful assistant." },
-        ...thread.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-      ];
-      const text = await postChat(apiMessages, chatId);
+      const apiMessages = thread.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+      const text = await postChat(apiMessages, chatId, {
+        promptJob: "chat",
+        systemPromptExtension: agent.systemPrompt.trim() || "You are a helpful assistant.",
+      });
       setMessages((prev) => [...prev, { id: nanoid(), role: "assistant", content: text }]);
     } catch (e) {
       toast.error(String(e));

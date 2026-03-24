@@ -314,10 +314,12 @@ export default function SettingsPage() {
                 <CardContent className="pt-6 space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="font-heading text-sm">Credit Alerts</Label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Get notified when credits are low</p>
+                      <Label className="font-heading text-sm">Provider usage</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Billing is on your API dashboards — no in-app credit alerts
+                      </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch disabled />
                   </div>
                   <Separator className="opacity-30" />
                   <div className="flex items-center justify-between">

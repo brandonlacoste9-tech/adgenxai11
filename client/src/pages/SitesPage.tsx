@@ -30,7 +30,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { SiteDto, SitePageDto } from "@shared/sites-api";
+import type { PushGithubResult, SiteDto, SitePageDto } from "@shared/sites-api";
 import {
   addSitePage,
   createSite,
@@ -65,6 +65,7 @@ export default function SitesPage() {
   const [ghBranch, setGhBranch] = useState("main");
   const [ghCreate, setGhCreate] = useState(true);
   const [ghBusy, setGhBusy] = useState(false);
+  const [ghSuccess, setGhSuccess] = useState<PushGithubResult | null>(null);
 
   const refreshList = useCallback(async () => {
     try {
@@ -181,9 +182,9 @@ export default function SitesPage() {
         branch: ghBranch.trim() || "main",
         createRepo: ghCreate,
       });
-      toast.success("Pushed to GitHub");
-      window.open(out.htmlUrl, "_blank", "noopener,noreferrer");
-      setGhOpen(false);
+      setGhSuccess(out);
+      toast.success("Pushed — opening GitHub Pages settings.");
+      window.open(out.pagesSettingsUrl, "_blank", "noopener,noreferrer");
     } catch (e) {
       toast.error(String(e));
     } finally {
@@ -302,40 +303,88 @@ export default function SitesPage() {
           </div>
         </ScrollArea>
 
-        <Dialog open={ghOpen} onOpenChange={setGhOpen}>
+        <Dialog
+          open={ghOpen}
+          onOpenChange={(open) => {
+            setGhOpen(open);
+            if (!open) setGhSuccess(null);
+          }}
+        >
           <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="font-heading flex items-center gap-2">
-                <Github className="h-5 w-5" /> Push to GitHub
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Owner (GitHub username)</Label>
-                <Input value={ghOwner} onChange={(e) => setGhOwner(e.target.value)} placeholder="octocat" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Repository name</Label>
-                <Input value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="my-landing-page" />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Branch</Label>
-                <Input value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
-              </div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <Checkbox checked={ghCreate} onCheckedChange={(v) => setGhCreate(v === true)} />
-                Create repository if it does not exist (your account only)
-              </label>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setGhOpen(false)} className="bg-transparent">
-                Cancel
-              </Button>
-              <Button onClick={() => void handleGithubPush()} disabled={ghBusy}>
-                {ghBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
-                Push
-              </Button>
-            </DialogFooter>
+            {ghSuccess ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-heading">Push complete</DialogTitle>
+                </DialogHeader>
+                <p className="text-sm text-muted-foreground">{ghSuccess.pagesHint}</p>
+                <div className="space-y-2 py-2">
+                  <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2 text-xs font-mono break-all">
+                    {ghSuccess.githubPagesUrl}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" className="bg-transparent gap-1" asChild>
+                      <a href={ghSuccess.pagesSettingsUrl} target="_blank" rel="noopener noreferrer">
+                        Pages settings <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-transparent gap-1"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(ghSuccess.githubPagesUrl);
+                        toast.success("Pages URL copied");
+                      }}
+                    >
+                      Copy Pages URL
+                    </Button>
+                    <Button size="sm" variant="outline" className="bg-transparent gap-1" asChild>
+                      <a href={ghSuccess.htmlUrl} target="_blank" rel="noopener noreferrer">
+                        View files <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setGhOpen(false)}>Done</Button>
+                </DialogFooter>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-heading flex items-center gap-2">
+                    <Github className="h-5 w-5" /> Push to GitHub
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Owner (GitHub username)</Label>
+                    <Input value={ghOwner} onChange={(e) => setGhOwner(e.target.value)} placeholder="octocat" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Repository name</Label>
+                    <Input value={ghRepo} onChange={(e) => setGhRepo(e.target.value)} placeholder="my-landing-page" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Branch</Label>
+                    <Input value={ghBranch} onChange={(e) => setGhBranch(e.target.value)} placeholder="main" />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={ghCreate} onCheckedChange={(v) => setGhCreate(v === true)} />
+                    Create repository if it does not exist (your account only)
+                  </label>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setGhOpen(false)} className="bg-transparent">
+                    Cancel
+                  </Button>
+                  <Button onClick={() => void handleGithubPush()} disabled={ghBusy}>
+                    {ghBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+                    Push
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -1,3 +1,4 @@
+import type { ChatPromptJob } from "@shared/chat-api";
 import { apiKeyForProvider, providerForUiModel } from "@shared/chat-api";
 import { loadStoredApiKeys } from "@/lib/api-keys";
 
@@ -33,7 +34,17 @@ export function canCallChatApiForModel(modelId: string): boolean {
   return !!apiKeyForProvider(loadStoredApiKeys(), p);
 }
 
-export async function postChat(messages: { role: "system" | "user" | "assistant"; content: string }[], model: string) {
+export type PostChatExtras = {
+  promptJob?: ChatPromptJob;
+  systemPromptExtension?: string;
+  siteDesignNotes?: string;
+};
+
+export async function postChat(
+  messages: { role: "system" | "user" | "assistant"; content: string }[],
+  model: string,
+  extras?: PostChatExtras,
+) {
   const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -41,6 +52,7 @@ export async function postChat(messages: { role: "system" | "user" | "assistant"
       model,
       messages,
       apiKeys: loadStoredApiKeys(),
+      ...extras,
     }),
   });
   const data = (await res.json()) as { content?: string; error?: string };
